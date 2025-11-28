@@ -75,7 +75,7 @@ export default function DashboardPage() {
     if (mode == "real") {
       setDataSource("real");
       fetch("http://localhost:10000/app/allEmp", {
-        headers: { auth: localStorage.getItem("authToken") },
+        headers: { auth: localStorage.getItem("authToken") || "" },
       })
         .then((res) => {
           if (res.status == 403){
@@ -327,7 +327,7 @@ const NewEmpEntry = forwardRef(
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            auth: localStorage.getItem("authToken"),
+          auth: localStorage.getItem("authToken") || ""
           },
           body: JSON.stringify({
             ...formData,

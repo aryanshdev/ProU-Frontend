@@ -48,7 +48,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       setUserInfo(JSON.parse(storedUser));
     } else if (token) {
       // If we have a token but no user data, fetch it
-      fetch("http://localhost:10000/auth/whoami", {
+      fetch("https://prou-backend-uywy.onrender.com/auth/whoami", {
         headers: {
           auth: `${token}`, // Matches your backend requirement
         },

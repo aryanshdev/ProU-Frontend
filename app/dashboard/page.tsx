@@ -33,7 +33,7 @@ export default function DashboardPage() {
 
   const UpdateEmployeeDetails = useCallback(async (updatedEmp: EmpData) => {
     try {
-      const res = await fetch("http://localhost:10000/app/updateDetails", {
+      const res = await fetch("https://prou-backend-uywy.onrender.com/app/updateDetails", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -74,7 +74,7 @@ export default function DashboardPage() {
   const setMode = (mode: string) => {
     if (mode == "real") {
       setDataSource("real");
-      fetch("http://localhost:10000/app/allEmp", {
+      fetch("https://prou-backend-uywy.onrender.com/app/allEmp", {
         headers: { auth: localStorage.getItem("authToken") || "" },
       })
         .then((res) => {
@@ -93,7 +93,7 @@ export default function DashboardPage() {
   };
   const DeleteEmployee = useCallback(async (id: number) => {
     try {
-      const res = await fetch("http://localhost:10000/app/rmEmp", {
+      const res = await fetch("https://prou-backend-uywy.onrender.com/app/rmEmp", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -115,7 +115,7 @@ export default function DashboardPage() {
     async (id: number, status: EmpStatus) => {
       try {
         const res = await fetch(
-          "http://localhost:10000/app/markPresentAbsent",
+          "https://prou-backend-uywy.onrender.com/app/markPresentAbsent",
           {
             method: "PUT",
             headers: {
@@ -323,7 +323,7 @@ const NewEmpEntry = forwardRef(
 
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:10000/app/createEmp", {
+        const res = await fetch("https://prou-backend-uywy.onrender.com/app/createEmp", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

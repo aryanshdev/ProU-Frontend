@@ -14,7 +14,7 @@ import { ToastContainer } from "react-toastify";
 export default function Home() {
   const router = useRouter();
   const signIn = ()=>{
-    router.push("http://localhost:10000/auth/google")
+    router.push("https://prou-backend-uywy.onrender.com/auth/google")
   }
   return (
   

@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const [dataSource, setDataSource] = useState("mock");
   const [searchedName, setSearchedName] = useState("");
   const [EmpData, setEmpData] = useState<EmpData[] | null>(MockData);
-  const AddEmpRef = useRef<HTMLDivElement>(null);
+  const AddEmpRef = useRef<any>(null);
 
   const UpdateEmployeeDetails = useCallback(async (updatedEmp: EmpData) => {
     try {
@@ -245,7 +245,7 @@ export default function DashboardPage() {
             <button
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               onClick={() => {
-                AddEmpRef.current.toggle();
+                AddEmpRef.current!.toggle();
               }}
             >
               <Plus className="h-4 w-4" />

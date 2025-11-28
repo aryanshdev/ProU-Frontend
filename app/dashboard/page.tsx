@@ -27,27 +27,31 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 export default function DashboardPage() {
   const [dataSource, setDataSource] = useState("mock");
+  const [isLoading, setIsLoading] = useState(false)
   const [searchedName, setSearchedName] = useState("");
   const [EmpData, setEmpData] = useState<EmpData[] | null>(MockData);
   const AddEmpRef = useRef<any>(null);
 
   const UpdateEmployeeDetails = useCallback(async (updatedEmp: EmpData) => {
     try {
-      const res = await fetch("https://prou-backend-uywy.onrender.com/app/updateDetails", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          auth: localStorage.getItem("authToken") || "",
-        },
-        body: JSON.stringify({
-          id: updatedEmp.id,
-          name: updatedEmp.name,
-          role: updatedEmp.role,
-          dept: updatedEmp.department, 
-          status: updatedEmp.status,
-          salary: updatedEmp.salary,
-        }),
-      });
+      const res = await fetch(
+        "https://prou-backend-uywy.onrender.com/app/updateDetails",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            auth: localStorage.getItem("authToken") || "",
+          },
+          body: JSON.stringify({
+            id: updatedEmp.id,
+            name: updatedEmp.name,
+            role: updatedEmp.role,
+            dept: updatedEmp.department,
+            status: updatedEmp.status,
+            salary: updatedEmp.salary,
+          }),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to update");
 
@@ -73,19 +77,20 @@ export default function DashboardPage() {
   }, [searchParams, router]);
   const setMode = (mode: string) => {
     if (mode == "real") {
+      setIsLoading(true);
       setDataSource("real");
       fetch("https://prou-backend-uywy.onrender.com/app/allEmp", {
         headers: { auth: localStorage.getItem("authToken") || "" },
       })
         .then((res) => {
-          if (res.status == 403){
-            toast.error("Session TimedOut, Please Relogin")
+          if (res.status == 403) {
+            toast.error("Session TimedOut, Please Relogin");
             router.push("/");
-            throw "Session Up"
+            throw "Session Up";
           }
-          return res.json()
+          return res.json();
         })
-        .then((res) => setEmpData(res));
+        .then((res) => setEmpData(res)).finally(()=>setIsLoading(false));
     } else {
       setDataSource("mock");
       setEmpData(MockData);
@@ -93,21 +98,24 @@ export default function DashboardPage() {
   };
   const DeleteEmployee = useCallback(async (id: number) => {
     try {
-      const res = await fetch("https://prou-backend-uywy.onrender.com/app/rmEmp", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          auth: localStorage.getItem("authToken") || "",
-        },
-        body: JSON.stringify({ id }),
-      });
+      const res = await fetch(
+        "https://prou-backend-uywy.onrender.com/app/rmEmp",
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            auth: localStorage.getItem("authToken") || "",
+          },
+          body: JSON.stringify({ id }),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed");
 
       setEmpData((prev) => (prev ? prev.filter((emp) => emp.id !== id) : null));
       toast.success("Employee Deleted");
     } catch (err) {
-      console.log(err)
+      console.log(err);
       toast.error("Failed to Delete");
     }
   }, []);
@@ -212,11 +220,12 @@ export default function DashboardPage() {
         <StatCard
           title="Present %"
           value={
-            ( EmpData!.length > 0 ?
-              (EmpData!.filter((ele) => ele.status == EmpStatus.present)
-                .length /
-                EmpData!.length) *
-              100 : 0
+            (EmpData!.length > 0
+              ? (EmpData!.filter((ele) => ele.status == EmpStatus.present)
+                  .length /
+                  EmpData!.length) *
+                100
+              : 0
             )
               .toFixed(1)
               .toString() + "%"
@@ -235,7 +244,7 @@ export default function DashboardPage() {
               placeholder="Search employees..."
               className="w-full bg-black/40 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50"
               onInput={(ele) => {
-            FilterUsers((ele.target as HTMLInputElement).value);
+                FilterUsers((ele.target as HTMLInputElement).value);
               }}
             />
           </div>
@@ -273,18 +282,26 @@ export default function DashboardPage() {
               ) : (
                 <></>
               )}
-              {EmpData!
-                .filter((emp) => emp.name.toLowerCase().includes(searchedName))
-                .map((emp) => (
-                  <EmpDisplay
-                    key={emp.id}
-                    emp={emp}
-                    isMock={dataSource == "mock"}
-                    MarkEmpCallback={MarkEmployeePresentAbsent}
-                    DeleteEmpCallback = {DeleteEmployee}
-                    UpdateEmpCallback={UpdateEmployeeDetails}
-                  />
-                ))}
+              {isLoading ? (
+                <>
+                <div className="h-12 w-12 rounded-full border-b-2 border-r-2 animate-spin"></div>
+                </>
+              ) : (
+                EmpData!
+                  .filter((emp) =>
+                    emp.name.toLowerCase().includes(searchedName)
+                  )
+                  .map((emp) => (
+                    <EmpDisplay
+                      key={emp.id}
+                      emp={emp}
+                      isMock={dataSource == "mock"}
+                      MarkEmpCallback={MarkEmployeePresentAbsent}
+                      DeleteEmpCallback={DeleteEmployee}
+                      UpdateEmpCallback={UpdateEmployeeDetails}
+                    />
+                  ))
+              )}
             </tbody>
           </table>
         </div>
@@ -323,17 +340,20 @@ const NewEmpEntry = forwardRef(
 
       setLoading(true);
       try {
-        const res = await fetch("https://prou-backend-uywy.onrender.com/app/createEmp", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          auth: localStorage.getItem("authToken") || ""
-          },
-          body: JSON.stringify({
-            ...formData,
-            salary: Number(formData.salary),
-          }),
-        });
+        const res = await fetch(
+          "https://prou-backend-uywy.onrender.com/app/createEmp",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              auth: localStorage.getItem("authToken") || "",
+            },
+            body: JSON.stringify({
+              ...formData,
+              salary: Number(formData.salary),
+            }),
+          }
+        );
 
         if (!res.ok) throw new Error("Failed");
 
@@ -461,7 +481,7 @@ function EmpDisplay({
 }) {
   const menuRef = useRef<any>(null);
   const [isEditing, setIsEditing] = useState(false);
-  
+
   // Local state for the inputs
   const [editData, setEditData] = useState<EmpData>(emp);
 
@@ -591,7 +611,9 @@ function EmpDisplay({
           >
             {!isMock ? (
               <>
-                <div className="hover:bg-zinc-950 bg-black transition-all duration-200 w-full px-5 py-2 rounded-lg text-base text-zinc-400 whitespace-nowrap" onClick={() => {
+                <div
+                  className="hover:bg-zinc-950 bg-black transition-all duration-200 w-full px-5 py-2 rounded-lg text-base text-zinc-400 whitespace-nowrap"
+                  onClick={() => {
                     setIsEditing(true);
                     menuRef.current.classList.add("!hidden"); // Hide menu
                   }}

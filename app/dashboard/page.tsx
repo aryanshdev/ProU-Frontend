@@ -31,7 +31,36 @@ export default function DashboardPage() {
   const [EmpData, setEmpData] = useState<EmpData[] | null>(MockData);
   const AddEmpRef = useRef<HTMLDivElement>(null);
 
-  // const [serverData, setServerData] = useState<EmpData[] | null>(null);
+  const UpdateEmployeeDetails = useCallback(async (updatedEmp: EmpData) => {
+    try {
+      const res = await fetch("http://localhost:10000/app/updateDetails", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          auth: localStorage.getItem("authToken") || "",
+        },
+        body: JSON.stringify({
+          id: updatedEmp.id,
+          name: updatedEmp.name,
+          role: updatedEmp.role,
+          dept: updatedEmp.department, 
+          status: updatedEmp.status,
+          salary: updatedEmp.salary,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update");
+
+      setEmpData((prev) =>
+        prev
+          ? prev.map((emp) => (emp.id === updatedEmp.id ? updatedEmp : emp))
+          : null
+      );
+      toast.success("Details Updated Successfully");
+    } catch (err) {
+      toast.error("Failed To Update");
+    }
+  }, []);
   const searchParams = useSearchParams();
   const router = useRouter();
   useEffect(() => {
@@ -52,7 +81,7 @@ export default function DashboardPage() {
           if (res.status == 403){
             toast.error("Session TimedOut, Please Relogin")
             router.push("/");
-            return
+            throw "Session Up"
           }
           return res.json()
         })
@@ -248,12 +277,12 @@ export default function DashboardPage() {
                 .filter((emp) => emp.name.toLowerCase().includes(searchedName))
                 .map((emp) => (
                   <EmpDisplay
-                  
                     key={emp.id}
                     emp={emp}
                     isMock={dataSource == "mock"}
                     MarkEmpCallback={MarkEmployeePresentAbsent}
                     DeleteEmpCallback = {DeleteEmployee}
+                    UpdateEmpCallback={UpdateEmployeeDetails}
                   />
                 ))}
             </tbody>
@@ -422,13 +451,104 @@ function EmpDisplay({
   isMock,
   MarkEmpCallback,
   DeleteEmpCallback,
+  UpdateEmpCallback,
 }: {
   emp: EmpData;
   isMock: boolean;
   MarkEmpCallback: (id: number, status: EmpStatus) => Promise<void>;
   DeleteEmpCallback: (id: number) => Promise<void>;
+  UpdateEmpCallback: (updatedEmp: EmpData) => Promise<void>;
 }) {
-  const menuRef = useRef(null);
+  const menuRef = useRef<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Local state for the inputs
+  const [editData, setEditData] = useState<EmpData>(emp);
+
+  const handleEditChange = (e: any) => {
+    setEditData({ ...editData, [e.target.name]: e.target.value });
+  };
+
+  const saveEdit = async () => {
+    // Call the parent update function
+    await UpdateEmpCallback(editData);
+    setIsEditing(false);
+  };
+
+  const cancelEdit = () => {
+    setEditData(emp); // Reset data
+    setIsEditing(false);
+  };
+
+  // --- RENDER EDIT MODE ---
+  if (isEditing) {
+    return (
+      <tr className="bg-blue-500/5 border-b border-blue-500/20">
+        <td className="px-6 py-4">
+          <input
+            name="name"
+            value={editData.name}
+            onChange={handleEditChange}
+            className="w-full bg-zinc-900 border border-white/10 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+          />
+        </td>
+        <td className="px-6 py-4">
+          <input
+            name="role"
+            value={editData.role}
+            onChange={handleEditChange}
+            className="w-full bg-zinc-900 border border-white/10 rounded px-2 py-1 text-zinc-300 text-sm focus:outline-none focus:border-blue-500"
+          />
+        </td>
+        <td className="px-6 py-4">
+          <input
+            name="department"
+            value={editData.department}
+            onChange={handleEditChange}
+            className="w-24 bg-zinc-900 border border-white/10 rounded px-2 py-1 text-zinc-300 text-sm focus:outline-none focus:border-blue-500"
+          />
+        </td>
+        <td className="px-6 py-4">
+          <select
+            name="status"
+            value={editData.status}
+            onChange={handleEditChange}
+            className="bg-zinc-900 border border-white/10 rounded px-2 py-1 text-zinc-300 text-sm focus:outline-none focus:border-blue-500"
+          >
+            <option value={EmpStatus.present}>Present</option>
+            <option value={EmpStatus.leave}>On Leave</option>
+          </select>
+        </td>
+        <td className="px-6 py-4 text-right">
+          <input
+            name="salary"
+            type="number"
+            value={editData.salary}
+            onChange={handleEditChange}
+            className="w-24 bg-zinc-900 border border-white/10 rounded px-2 py-1 text-zinc-300 text-sm text-right focus:outline-none focus:border-blue-500"
+          />
+        </td>
+        <td className="px-6 py-4 text-right">
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={saveEdit}
+              className="p-1.5 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 rounded-lg transition-colors"
+            >
+              <Check className="h-4 w-4" />
+            </button>
+            <button
+              onClick={cancelEdit}
+              className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+  // --- RENDER NORMAL DISPLAY MODE ---
   return (
     <tr key={emp.id} className="hover:bg-white/5 transition-colors">
       <td className="px-6 py-4 text-white font-medium">{emp.name}</td>
@@ -467,33 +587,38 @@ function EmpDisplay({
         >
           <div
             ref={menuRef}
-            className="absolute bg-black !hidden rounded-lg z-10 top-1/2 -translate-y-1/2 right-10 w-max flex flex-col gap-2"
+            className="absolute bg-black !hidden rounded-lg z-10 top-1/2 -translate-y-1/2 right-10 w-max flex flex-col gap-2 shadow-xl border border-white/10"
           >
             {!isMock ? (
               <>
-                <div className=" hover:bg-zinc-950 transition-all duration-200 w-full px-5 py-2 rounded-t-lg text-base">
+                <div className="hover:bg-zinc-950 bg-black transition-all duration-200 w-full px-5 py-2 rounded-lg text-base text-zinc-400 whitespace-nowrap" onClick={() => {
+                    setIsEditing(true);
+                    menuRef.current.classList.add("!hidden"); // Hide menu
+                  }}
+                >
                   Update Details
                 </div>
                 <div
-                  className="hover:bg-zinc-950 transition-all duration-200 w-full px-5 py-2   text-base"
+                  className="hover:bg-zinc-900 cursor-pointer transition-all duration-200 w-full px-5 py-2 text-base text-left whitespace-nowrap"
                   onClick={() => {
                     MarkEmpCallback(emp.id, emp.status);
+                    menuRef.current.classList.add("!hidden");
                   }}
                 >
-                  {emp.status == "Present" ? "Mark Absent" : "Mark Present"}{" "}
+                  {emp.status == "Present" ? "Mark Absent" : "Mark Present"}
                 </div>
                 <div
-                  className="hover:bg-zinc-950 transition-all duration-200 w-full px-5 py-2 rounded-b-lg  text-base"
+                  className="hover:bg-red-800 cursor-pointer transition-all duration-200 w-full px-5 py-2 rounded-b-lg text-base  text-left whitespace-nowrap"
                   onClick={() => {
                     DeleteEmpCallback(emp.id);
                   }}
                 >
                   Delete Employee
-                </div>{" "}
+                </div>
               </>
             ) : (
-              <div className=" hover:bg-zinc-950 transition-all duration-200 w-full px-5 py-2 rounded-t-lg text-base">
-                Options Only Available In Real Data
+              <div className="hover:bg-zinc-950 bg-black transition-all duration-200 w-full px-5 py-2 rounded-lg text-base text-zinc-400 whitespace-nowrap">
+                More Options Only Available In Real Data
               </div>
             )}
           </div>

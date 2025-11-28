@@ -29,7 +29,7 @@ const MockData: EmpData[] = [
     salary: 500000,
   },
   {
-    id: 3,
+    id: 19,
     name: "CDE Person",
     role: "Tech Lead",
     department: "Development",
@@ -37,13 +37,14 @@ const MockData: EmpData[] = [
     salary: 2500000,
   },
   {
-    id: 4,
+    id: 11,
     name: "FGH Person",
     role: "Social Media Lead",
     department: "PR",
     status: EmpStatus.present,
     salary: 500000,
-  }, {
+  },
+  {
     id: 5,
     name: "XYZ Person",
     role: "Product Lead",
@@ -51,8 +52,56 @@ const MockData: EmpData[] = [
     status: EmpStatus.present,
     salary: 500000,
   },
+  {
+    id: 3,
+    name: "Person CDE",
+    role: "Tech Lead",
+    department: "Development",
+    status: EmpStatus.leave,
+    salary: 2500000,
+  },
+  {
+    id: 4,
+    name: "Person DEF",
+    role: "Social Media Lead",
+    department: "PR",
+    status: EmpStatus.present,
+    salary: 500000,
+  },
+  {
+    id: 12,
+    name: "Person EFG",
+    role: "Product Lead",
+    department: "Product",
+    status: EmpStatus.present,
+    salary: 2000000,
+  },
+  
+  {
+    id: 7,
+    name: "GHI",
+    role: "Product Engineer",
+    department: "Development",
+    status: EmpStatus.present,
+    salary: 800000,
+  },
+  {
+    id: 8,
+    name: "EFG",
+    role: "HR Manager",
+    department: "HR",
+    status: EmpStatus.leave,
+    salary: 950000,
+  },
+  {
+    id: 9,
+    name: "IJK Person",
+    role: "Intern",
+    department: "Development",
+    status: EmpStatus.present,
+    salary: 300000,
+  },
 ];
 
-
-export {MockData, EmpStatus};
-export type {EmpData};
+export { MockData, EmpStatus };
+export type { EmpData };

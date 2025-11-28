@@ -8,13 +8,18 @@ import {
  
   Code,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ToastContainer } from "react-toastify";
 
 export default function Home() {
+  const router = useRouter();
   const signIn = ()=>{
-
+    router.push("http://localhost:10000/auth/google")
   }
   return (
+  
     <div className="flex min-h-screen flex-col bg-black text-white selection:bg-blue-500/30">
+
       {/* Navbar */}
       <nav className="border-b border-white/10 bg-black/50 backdrop-blur-md fixed w-full z-50">
         <div className="mx-auto flex h-16 px-6 md:px-16 items-center justify-between ">

@@ -7,7 +7,8 @@ import {
   LogOut,
   Layers,
   BarChart2,
-  UserCircle,
+  Menu,
+  X
 } from "lucide-react";
 import { useEffect, useState, Suspense } from "react";
 import { toast } from "react-toastify";
@@ -18,37 +19,36 @@ interface UserInfo {
   pfp: string;
 }
 
-// 1. We separate the logic component to wrap it in Suspense later
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   const router = useRouter();
-  const pathname = usePathname(); // Hook to get current URL path
-  const searchParams = useSearchParams(); // Hook to get URL queries (?token=...)
+  const pathname = usePathname(); // nav hook to get current URL path
+  const searchParams = useSearchParams(); // navhook to get URL query
+
+  // signout function to clear all data from local Stroage
+  const handleSignOut = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("loggedUser");
+    router.push("/");
+  };
 
   useEffect(() => {
-    // --- STEP 1: Check for Token in URL (First Priority) ---
     const urlToken = searchParams.get("token");
     let token = localStorage.getItem("authToken");
 
     if (urlToken) {
-      // Save it
       localStorage.setItem("authToken", urlToken);
       token = urlToken;
-
-      // Clean the URL (Remove ?token=...) so the user doesn't see it
       router.replace(pathname);
     }
 
-    // --- STEP 2: Handle User Data ---
     const storedUser = localStorage.getItem("loggedUser");
 
     if (storedUser) {
-      // Optimization: Load from cache immediately for speed
       setUserInfo(JSON.parse(storedUser));
     } else if (token) {
-      // If we have a token but no user data, fetch it
-      fetch("https://prou-backend-uywy.onrender.com/auth/whoami", {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/whoami", {
         headers: {
           auth: `${token}`, // Matches your backend requirement
         },
@@ -66,34 +66,64 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           toast.error("Session expired, please login again");
         });
     } else {
-      // No token at all? Redirect.
       toast.error("Please Login To View This Page");
       router.push("/");
     }
   }, [searchParams, pathname, router]); // Run when URL changes
 
-  const handleSignOut = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("loggedUser");
-    router.push("/");
-  };
-
+  // responsive design required state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
-    <div className="flex h-screen bg-black text-zinc-100 font-sans selection:bg-blue-500/30">
+    <div className="flex h-screen bg-black text-zinc-100 font-sans selection:bg-blue-500/30 flex-col md:flex-row">
+      {/* Small Screen Header */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-white/10 bg-zinc-950">
+        <div className="flex items-center gap-2 font-bold text-lg tracking-tight">
+          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <Layers className="h-5 w-5 text-white" />
+          </div>
+          <span>EmpTrack</span>
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 text-zinc-400 hover:text-white"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+      </div>
+
+      {/* Small Screen Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-xs md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 bg-zinc-950 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-white/5">
+      <aside
+        className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-white/10 flex flex-col transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        md:relative md:translate-x-0
+      `}
+      >
+        <div className="h-16 flex items-center justify-between px-6 border-b border-white/5">
           <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
             <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
               <Layers className="h-5 w-5 text-white" />
             </div>
             <span>EmpTrack</span>
           </div>
+          {/* Close Button for Small Screens */}
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden text-zinc-400 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Sidebar Nav */}
         <nav className="flex-1 flex flex-col px-4 py-6 space-y-1 gap-2">
-          {/* We pass the current pathname to check active state */}
           <NavItem
             href="/dashboard"
             label="Overview"
@@ -108,7 +138,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           />
         </nav>
 
-        {/* User Details & Logout Section */}
         <div className="p-4 border-t border-white/5 bg-zinc-900/50">
           {userInfo && (
             <div className="flex items-center gap-3 mb-4 px-2">
@@ -130,7 +159,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>
@@ -138,20 +167,20 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-auto bg-black">{children}</main>
+      <main className="flex-1 overflow-auto bg-black p-4 md:p-0">
+        {children}
+      </main>
     </div>
   );
 }
 
-// 2. Export the Layout wrapped in Suspense
-// Next.js requires Suspense when using useSearchParams in a layout to avoid build errors
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
+    // Load in suspense while the component fetches user details from backend
     <Suspense
       fallback={
         <div className="bg-black h-screen text-white p-10">Loading...</div>

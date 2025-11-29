@@ -25,17 +25,21 @@ import { MockData, EmpStatus } from "../MockData";
 import { EmpData } from "../MockData";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import "dotenv/config";
 export default function DashboardPage() {
+  // states
   const [dataSource, setDataSource] = useState("mock");
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
   const [searchedName, setSearchedName] = useState("");
   const [EmpData, setEmpData] = useState<EmpData[] | null>(MockData);
+
+  // ref for Add Employee Input component
   const AddEmpRef = useRef<any>(null);
 
   const UpdateEmployeeDetails = useCallback(async (updatedEmp: EmpData) => {
     try {
       const res = await fetch(
-        "https://prou-backend-uywy.onrender.com/app/updateDetails",
+        process.env.NEXT_PUBLIC_BACKEND_URL + "/app/updateDetails",
         {
           method: "PUT",
           headers: {
@@ -77,9 +81,10 @@ export default function DashboardPage() {
   }, [searchParams, router]);
   const setMode = (mode: string) => {
     if (mode == "real") {
+      // fetch data from backend API server
       setIsLoading(true);
       setDataSource("real");
-      fetch("https://prou-backend-uywy.onrender.com/app/allEmp", {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/app/allEmp", {
         headers: { auth: localStorage.getItem("authToken") || "" },
       })
         .then((res) => {
@@ -90,8 +95,11 @@ export default function DashboardPage() {
           }
           return res.json();
         })
-        .then((res) => setEmpData(res)).finally(()=>setIsLoading(false));
+        .then((res) => setEmpData(res))
+        .finally(() => setIsLoading(false));
     } else {
+      // fetch Mock data and set it as current Data
+      setIsLoading(false);
       setDataSource("mock");
       setEmpData(MockData);
     }
@@ -99,7 +107,7 @@ export default function DashboardPage() {
   const DeleteEmployee = useCallback(async (id: number) => {
     try {
       const res = await fetch(
-        "https://prou-backend-uywy.onrender.com/app/rmEmp",
+        process.env.NEXT_PUBLIC_BACKEND_URL + "/app/rmEmp",
         {
           method: "DELETE",
           headers: {
@@ -123,7 +131,7 @@ export default function DashboardPage() {
     async (id: number, status: EmpStatus) => {
       try {
         const res = await fetch(
-          "https://prou-backend-uywy.onrender.com/app/markPresentAbsent",
+          process.env.NEXT_PUBLIC_BACKEND_URL + "/app/markPresentAbsent",
           {
             method: "PUT",
             headers: {
@@ -210,8 +218,13 @@ export default function DashboardPage() {
 
       {/* STats Display*/}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard title="Total Employees" value={EmpData!.length.toString()} />
         <StatCard
+          isLoading={isLoading}
+          title="Total Employees"
+          value={EmpData!.length.toString()}
+        />
+        <StatCard
+          isLoading={isLoading}
           title="Present Today"
           value={EmpData!
             .filter((ele) => ele.status == EmpStatus.present)
@@ -219,6 +232,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Present %"
+          isLoading={isLoading}
           value={
             (EmpData!.length > 0
               ? (EmpData!.filter((ele) => ele.status == EmpStatus.present)
@@ -283,9 +297,13 @@ export default function DashboardPage() {
                 <></>
               )}
               {isLoading ? (
-                <>
-                <div className="h-12 w-12 rounded-full border-b-2 border-r-2 animate-spin"></div>
-                </>
+                <tr>
+                  <td colSpan={6} className="py-10 text-center">
+                    <div className="flex w-full items-center justify-center">
+                      <div className="h-12 w-12 rounded-full border-b-2 border-r-2 animate-spin border-white"></div>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 EmpData!
                   .filter((emp) =>
@@ -341,7 +359,7 @@ const NewEmpEntry = forwardRef(
       setLoading(true);
       try {
         const res = await fetch(
-          "https://prou-backend-uywy.onrender.com/app/createEmp",
+          process.env.NEXT_PUBLIC_BACKEND_URL + "/app/createEmp",
           {
             method: "POST",
             headers: {
@@ -612,7 +630,7 @@ function EmpDisplay({
             {!isMock ? (
               <>
                 <div
-                  className="hover:bg-zinc-950 bg-black transition-all duration-200 w-full px-5 py-2 rounded-lg text-base text-zinc-400 whitespace-nowrap"
+                  className="hover:bg-zinc-950 bg-black transition-all text-start duration-200 w-full px-5 py-2 rounded-lg text-base text-zinc-400 whitespace-nowrap"
                   onClick={() => {
                     setIsEditing(true);
                     menuRef.current.classList.add("!hidden"); // Hide menu
@@ -651,12 +669,22 @@ function EmpDisplay({
   );
 }
 
-function StatCard({ title, value }: { title: string; value: string }) {
+function StatCard({
+  title,
+  value,
+  isLoading,
+}: {
+  title: string;
+  value: string;
+  isLoading: boolean;
+}) {
   return (
     <div className="bg-zinc-900/50 border border-white/5 p-6 rounded-xl backdrop-blur-sm hover:border-white/10 transition-colors">
       <h3 className="text-sm font-medium text-zinc-400">{title}</h3>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-white">{value}</span>
+        <span className="text-3xl font-bold text-white">
+          {isLoading ? "Loading" : value}
+        </span>
       </div>
     </div>
   );

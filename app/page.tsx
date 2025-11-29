@@ -12,9 +12,10 @@ import { useRouter } from "next/navigation";
 import { ToastContainer } from "react-toastify";
 
 export default function Home() {
+  console.log(process.env.NEXT_PUBLIC_BACKEND_URL);
   const router = useRouter();
   const signIn = ()=>{
-    router.push("https://prou-backend-uywy.onrender.com/auth/google")
+    router.push(process.env.NEXT_PUBLIC_BACKEND_URL+"/auth/google")
   }
   return (
   
